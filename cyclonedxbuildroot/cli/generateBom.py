@@ -72,7 +72,7 @@ def read_buildroot_manifest(input_file):
 # python3 -m cyclonedxbuildroot.cli.generateBom.py -i manifest.xlsx
 def main():
     parser = argparse.ArgumentParser(description='CycloneDX BOM Generator')
-    parser.add_argument('-i', action='store', dest='input_file', default='manifest.csv')
+    parser.add_argument('-i', action='store', dest='input_file', default='manifest.xlsx')
     parser.add_argument('-o', action='store', dest='output_file', default='bom.xml')
     args = parser.parse_args()
     print('Input file: ' + args.input_file)
