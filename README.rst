@@ -17,10 +17,10 @@ be created in the current working directory. These options can be overwritten as
 
 .. code-block:: console
 
-    $ python3 -m cyclonedxbuildroot.cli.generateBom.py -i manifest.xlsx
+    $ python3 -m cyclonedxbuildroot.cli.generateBom -i manifest.csv
       Usage:  cyclonedx-py [OPTIONS]
       Options:
-        -i <path> - the alternate filename to a frozen manifest.xlsx
+        -i <path> - the alternate filename to a frozen manifest.csv
         -o <path> - the bom file to create
 
 
