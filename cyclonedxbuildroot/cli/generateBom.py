@@ -25,12 +25,13 @@ import re
 import xmlschema
 from cyclonedxbuildroot import BomGenerator
 from cyclonedxbuildroot import BomValidator
-#get copyright
+# get copyright
 # RLS import debmake
 import shutil
 import requests
 import urllib3
 import os
+
 http = urllib3.PoolManager()
 import urllib, json
 import pypandoc
@@ -42,19 +43,21 @@ import json
 def get_json_from_url(url):
     response = urllib.request.urlopen(url)
     return json.loads(response.read())
-    
+
 
 def print_list(list):
     for item in list:
         print(item)
 
+
 def sanitized_license_name(license):
-    #license name in buildroot is not well formatted for spdx.
+    # license name in buildroot is not well formatted for spdx.
     sanitized_license = re.sub('\(.*?\)', '', license)
     sanitized_license = sanitized_license.split(' or')[0]
     sanitized_license = sanitized_license.split(' ')[0]
     sanitized_license = sanitized_license.split(',')[0]
     return sanitized_license
+
 
 def read_openwrt_package_file(filepath):
     component = {}
@@ -64,7 +67,7 @@ def read_openwrt_package_file(filepath):
         while line:
             if "Package: " == line[:9]:
                 current_pakcage_name = line[9:].rstrip()
-                #print('packge_name: (%s)'%current_pakcage_name)
+                # print('packge_name: (%s)'%current_pakcage_name)
                 component[current_pakcage_name] = {}
                 component[current_pakcage_name]['version'] = 'openwrt'
                 component[current_pakcage_name]['license'] = 'Missing license!'
@@ -81,17 +84,17 @@ def read_openwrt_package_file(filepath):
             if "@@" == line:
                 current_pakcage_name = None
             line = fp.readline()
-    print("package_number : %d"%len(component))
-    return component 
+    print("package_number : %d" % len(component))
+    return component
 
 
-#where to store these two lists to be discussed!
+# where to store these two lists to be discussed!
 
-#better add a comment in it. to be discussed!
+# better add a comment in it. to be discussed!
 # this two lists shall be downloaded from git.
-#verified_package_list = [{ 'name': 'audit', 'version' : '2.8.4', 'approved': False }, { 'name': 'libcap-ng', 'version' : '0.7.9', 'approved': True }]
+# verified_package_list = [{ 'name': 'audit', 'version' : '2.8.4', 'approved': False }, { 'name': 'libcap-ng', 'version' : '0.7.9', 'approved': True }]
 
-#white list to be discussed!
+# white list to be discussed!
 """
 whitelist_license = ['Apache-2.0',\
     'BSD-2-Clause',\
@@ -110,17 +113,20 @@ whitelist_license = ['Apache-2.0',\
     'LGPL-2.1-only',\
     'LGPL-2.1-or-later']
 """
-verified_package_list = get_json_from_url("https://raw.githubusercontent.com/alvinchchen/verified_package_list/master/verified_package_list.json")
+verified_package_list = get_json_from_url(
+    "https://raw.githubusercontent.com/alvinchchen/verified_package_list/master/verified_package_list.json")
 
 whitelist_license = get_json_from_url("https://github.com/alvinchchen/verified_package_list/raw/master/whitelist.json")
+
 
 # RLS openwrt_package_info = read_openwrt_package_file("packageinfo")
 
 def check_verified_package_list(name, version):
     for pkg in verified_package_list:
-        if name == pkg['name'] and version ==pkg['version']:
+        if name == pkg['name'] and version == pkg['version']:
             return pkg
     return None
+
 
 def get_copyright(download_url, tarball_name):
     """Read copyright data from file."""
@@ -136,33 +142,33 @@ def get_copyright(download_url, tarball_name):
     tmp_source_dir = './tmp/src/'
     os.mkdir(tmp_source_dir)
     current_working_dir = os.getcwd()
-    
+
     local_download_path = './' + tarball_name
     download_url = download_url + "/" + tarball_name
     if not os.path.isfile(tarball_name):
         print('no tarball')
-        os.system('wget '+ download_url)
+        os.system('wget ' + download_url)
     if os.path.isfile(local_download_path):
-        os.system('tar xvf '+ local_download_path + ' -C ' + tmp_source_dir)
+        os.system('tar xvf ' + local_download_path + ' -C ' + tmp_source_dir)
     else:
         download_ok = False
-        
-    #scan copyright
+
+    # scan copyright
     os.chdir(tmp_source_dir)
     (nonlink_files, xml_html_files, binary_files, huge_files, counter, count_list) = debmake.scanfiles.scanfiles()
     data = debmake.checkdep5.checkdep5(nonlink_files, mode=3, pedantic=1)
-    
+
     for (licenseid, licensetext, files, copyright_lines) in data:
         copyright_line = copyright_lines[11:]
         if '__NO_COPYRIGHT__' not in copyright_line \
-            and '__INITIAL_' not in  copyright_line \
-            and '__NO_COPYRIGHT_NOR_LICENSE__' not in copyright_line \
-            and '__SHORT_LINE__' not in copyright_line \
-            and '__LONG_LINE__' not in copyright_line \
-            and '__MANY_NON_ASCII__' not in copyright_line :
-            
+                and '__INITIAL_' not in copyright_line \
+                and '__NO_COPYRIGHT_NOR_LICENSE__' not in copyright_line \
+                and '__SHORT_LINE__' not in copyright_line \
+                and '__LONG_LINE__' not in copyright_line \
+                and '__MANY_NON_ASCII__' not in copyright_line:
+
             copyright_string_list = copyright_line.split('\n')
-            
+
             for item in copyright_string_list:
                 string = item.lstrip().rstrip().replace('\\n', '')
                 if len(string):
@@ -172,10 +178,11 @@ def get_copyright(download_url, tarball_name):
     copyright_text = []
     index = 1
     for i in copyright.keys():
-        copyright_text.append('(%d) %s'%(index, i)) 
+        copyright_text.append('(%d) %s' % (index, i))
         index = index + 1
     print(copyright_text)
     return copyright_text, download_ok
+
 
 def get_url_license(license_url):
     """Read url_license from cyclonedx """
@@ -189,12 +196,10 @@ def get_url_license(license_url):
     tmp_source_dir = './tmp/src/'
     os.mkdir(tmp_source_dir)
     current_working_dir = os.getcwd()
-    
-    
-        
-    #scan copyright
+
+    # scan copyright
     os.chdir(tmp_source_dir)
-    os.system('wget '+ license_url)
+    os.system('wget ' + license_url)
     (nonlink_files, xml_html_files, binary_files, huge_files, counter, count_list) = debmake.scanfiles.scanfiles()
     print(nonlink_files)
     print(xml_html_files)
@@ -212,6 +217,7 @@ def get_url_license(license_url):
     os.chdir(current_working_dir)
     shutil.rmtree(tmp_dir)
     return result
+
 
 # currenty the manifest.csv file header shows
 # PACKAGE,VERSION,LICENSE,LICENSE FILES,SOURCE ARCHIVE,SOURCE SITE,DEPENDENCIES WITH LICENSES
@@ -238,7 +244,9 @@ def build_cyclonedx_component(component):
     for item in component['copyright']:
         copyright += item
     description = component['description']
-    return BomGenerator.build_component_element(publisher, pkg_name, version, description, hashes, license, purl, modified, copyright)
+    return BomGenerator.build_component_element(publisher, pkg_name, version, description, hashes, license, purl,
+                                                modified, copyright)
+
 
 def openwrt_manifest_to_component(input_file):
     """Read BOM data from file path."""
@@ -284,11 +292,11 @@ def buildroot_manifest_to_component(input_file):
     if input_file.split('.')[1] == 'csv':
         sheetX = pd.read_csv(input_file)
     else:
-        #xslx
+        # xslx
         xls = pd.ExcelFile(input_file)
-        #parse sheet 0
+        # parse sheet 0
         sheetX = xls.parse(0)
-        
+
     print(f'package number : {len(sheetX)}')
     for i in range(0, len(sheetX)):
         component = {}
@@ -301,20 +309,20 @@ def buildroot_manifest_to_component(input_file):
         component['license'] = sheetX.loc[i].values[2]
         component['hashes'] = []
         component['modified'] = 'false'
-        
+
         if component['license'].upper() == 'unknown'.upper():
             component['license'] = component['license'].upper()
             component['download_fail'] = False
-        else: 
+        else:
             copyright, download_ok = get_copyright(component['download_url'], component['pkg_tar_ball_name'])
             if not download_ok:
-                #download_fail_report.append(component)
+                # download_fail_report.append(component)
                 component['download_fail'] = True
             else:
                 component['download_fail'] = False
         component['copyright'] = copyright
         component['description'] = component['download_url'] + ' ' + component['pkg_tar_ball_name']
-        
+
         component_elements.append(component)
     return component_elements
 
@@ -325,11 +333,11 @@ def report_csv_to_component(input_file):
     if input_file.split('.')[1] == 'csv':
         sheetX = pd.read_csv(input_file)
     else:
-        #xslx
+        # xslx
         xls = pd.ExcelFile(input_file)
-        #parse sheet 0
+        # parse sheet 0
         sheetX = xls.parse(0)
-        
+
     print(f'package number : {len(sheetX)}')
     for i in range(0, len(sheetX)):
         component = {}
@@ -348,21 +356,21 @@ def report_csv_to_component(input_file):
         else:
             component['copyright'] = ''
         component['description'] = ""
-        
+
         component_elements.append(component)
     return component_elements
 
-def cyclonedx_to_component(input_file):
 
+def cyclonedx_to_component(input_file):
     component_elements = []
     with open(input_file) as fd:
         doc = xmltodict.parse(fd.read())
         print(doc['bom']['components']['component'])
     if type(doc['bom']['components']['component']) is not list:
         doc['bom']['components']['component'] = [doc['bom']['components']['component']]
-    for item in  doc['bom']['components']['component']:
+    for item in doc['bom']['components']['component']:
         component = {}
-        
+
         component['publisher'] = ''
         component['pkg_name'] = item['name']
         component['version'] = item['version']
@@ -370,9 +378,9 @@ def cyclonedx_to_component(input_file):
             component['purl'] = item['purl']
         else:
             component['purl'] = ""
-        
-        #component['pkg_tar_ball_name'] = item['description'].split(' ')[1]
-        #component['download_url'] = item['description'].split(' ')[0]
+
+        # component['pkg_tar_ball_name'] = item['description'].split(' ')[1]
+        # component['download_url'] = item['description'].split(' ')[0]
         component['download_url'] = ''
         component['pkg_tar_ball_name'] = ''
         if 'licenses' in item.keys():
@@ -383,7 +391,7 @@ def cyclonedx_to_component(input_file):
                 if component['license'] == '__UNKNOWN__' or component['license'] == '__NO_COPYRIGHT_NOR_LICENSE__':
                     component['license'] = item['licenses']['license']['url']
             elif 'name' in item['licenses']['license'].keys():
-                    component['license'] = item['licenses']['license']['name']
+                component['license'] = item['licenses']['license']['name']
             else:
                 component['license'] = 'xml licenses element exists but no license found!'
             """
@@ -413,17 +421,23 @@ def cyclonedx_to_component(input_file):
         component_elements.append(component)
     return component_elements
 
+
 license_text_database = {}
+
+
 def get_license_text(license_name):
     try:
         if license_name in license_text_database.keys():
             return license_text_database[license_name]
         else:
-            license_detail = get_json_from_url("https://raw.githubusercontent.com/spdx/license-list-data/master/json/details/%s.json" % license_name)
+            license_detail = get_json_from_url(
+                "https://raw.githubusercontent.com/spdx/license-list-data/master/json/details/%s.json" % license_name)
             license_text_database[license_name] = license_detail['licenseText']
             return license_detail['licenseText']
     except:
         return "no license text"
+
+
 def generate_report_object(component_list):
     """Read BOM data from file path."""
     report = {}
@@ -434,10 +448,10 @@ def generate_report_object(component_list):
     private_report = []
     download_fail_report = []
     for component in component_list:
-    
+
         verified_result = check_verified_package_list(component['pkg_name'], component['version'])
         temp_bom = BomGenerator.build_bom([build_cyclonedx_component(component)])
-        
+
         is_not_format_valid = not BomValidator.is_valid(temp_bom)
         is_unknown_license = component['license'] == 'UNKNOWN'
         is_not_license_in_whitelist = not component['license'] in whitelist_license
@@ -451,14 +465,14 @@ def generate_report_object(component_list):
         else:
             # opensource packages
             if is_not_format_valid or is_not_license_in_whitelist:
-                #check if OSRB approved this package
+                # check if OSRB approved this package
                 if is_osrb_verified:
                     if verified_result['approved']:
                         component['license'] = verified_result['license_id']
                         copyright = ''
                         index = 1
                         for i in verified_result['copyright']:
-                            copyright += '(%d) %s\n'%(index, i)
+                            copyright += '(%d) %s\n' % (index, i)
                             index = index + 1
                         component['copyright'] = copyright
                         ok_report.append(component)
@@ -468,30 +482,37 @@ def generate_report_object(component_list):
                     warning_report.append(component)
             else:
                 whitelist_report.append(component)
-            
+
     report['ok_report'] = ok_report
     report['error_report'] = error_report
     report['warning_report'] = warning_report
     report['whitelist_report'] = whitelist_report
     report['private_report'] = private_report
     report['download_fail_report'] = download_fail_report
-    
+
     return report
+
 
 def print_report(component_elements):
     report = generate_report_object(component_elements)
     for item in report['ok_report']:
-        print('\x1b[6;30;45m[OK]\x1b[0m package: [%s %s] license [%s]'%(item['pkg_name'], item['version'], item['license']))
+        print('\x1b[6;30;45m[OK]\x1b[0m package: [%s %s] license [%s]' % (
+        item['pkg_name'], item['version'], item['license']))
     for item in report['error_report']:
-        print('\x1b[6;30;41m[ERROR]\x1b[0m package: [%s %s] license [%s]'%(item['pkg_name'], item['version'], item['license']))
+        print('\x1b[6;30;41m[ERROR]\x1b[0m package: [%s %s] license [%s]' % (
+        item['pkg_name'], item['version'], item['license']))
     for item in report['warning_report']:
-        print('\x1b[6;30;43m[WARNING]\x1b[0m package: [%s %s] license [%s]'%(item['pkg_name'], item['version'], item['license']))
+        print('\x1b[6;30;43m[WARNING]\x1b[0m package: [%s %s] license [%s]' % (
+        item['pkg_name'], item['version'], item['license']))
     for item in report['whitelist_report']:
-        print('\x1b[6;30;47m[WHITELIST]\x1b[0m package: [%s %s] license [%s]'%(item['pkg_name'], item['version'], item['license']))
+        print('\x1b[6;30;47m[WHITELIST]\x1b[0m package: [%s %s] license [%s]' % (
+        item['pkg_name'], item['version'], item['license']))
     for item in report['private_report']:
-        print('\x1b[6;30;45m[PRIVATE]\x1b[0m package: [%s %s] license [%s]'%(item['pkg_name'], item['version'], item['license']))
+        print('\x1b[6;30;45m[PRIVATE]\x1b[0m package: [%s %s] license [%s]' % (
+        item['pkg_name'], item['version'], item['license']))
     for item in report['download_fail_report']:
-        print('\x1b[6;37;44m[DOWNLOAD FAIL]\x1b[0m package: [%s %s] Url [%s/%s]'%(item['pkg_name'], item['version'], item['download_url'], item['pkg_tar_ball_name']))
+        print('\x1b[6;37;44m[DOWNLOAD FAIL]\x1b[0m package: [%s %s] Url [%s/%s]' % (
+        item['pkg_name'], item['version'], item['download_url'], item['pkg_tar_ball_name']))
 
 
 def component_result(component):
@@ -504,14 +525,14 @@ def component_result(component):
 
     # opensource packages
     if is_not_format_valid or is_not_license_in_whitelist:
-        #check if OSRB approved this package
+        # check if OSRB approved this package
         if is_osrb_verified:
             if verified_result['approved']:
                 component['license'] = verified_result['license_id']
                 copyright = ''
                 index = 1
                 for i in verified_result['copyright']:
-                    copyright += '(%d) %s\n'%(index, i)
+                    copyright += '(%d) %s\n' % (index, i)
                     index = index + 1
                 component['copyright'] = copyright
                 return "APPROVED"
@@ -522,58 +543,66 @@ def component_result(component):
     else:
         return "WHITE LIST"
 
+
 def report_to_row(report, result):
     markdown = ""
     for item in report:
-        markdown += '|%20s|%20s|        |%s|\n' % (item['pkg_name']+ ' ' + item['version'], item['license'],result)
-        #copyright = ""
-        #for item2 in item['copyright']:
+        markdown += '|%20s|%20s|        |%s|\n' % (item['pkg_name'] + ' ' + item['version'], item['license'], result)
+        # copyright = ""
+        # for item2 in item['copyright']:
         #    markdown += '| | |%s|\n' % (item2)
     print(markdown)
     return markdown
 
 
 def export_csv_report(component_elements, file_name):
-    labels = ['RESULT', 'PACKAGE', 'VERSION' , 'LICENSE' , 'COPYRIGHT',  'DOWNLOAD URL', 'LICENSE_TEXT']
+    labels = ['RESULT', 'PACKAGE', 'VERSION', 'LICENSE', 'COPYRIGHT', 'DOWNLOAD URL', 'LICENSE_TEXT']
     values = []
     to_be_verified_values = []
     approved_values = []
     rejected_values = []
     white_list_values = []
     else_values = []
-    
+
     for component in component_elements:
-        #print(component)
+        # print(component)
         if component['download_url'] != '' or component['pkg_tar_ball_name'] != '':
-            url = component['download_url']+'/'+component['pkg_tar_ball_name']
+            url = component['download_url'] + '/' + component['pkg_tar_ball_name']
         else:
             url = ''
-        license_text = get_license_text(component['license']).encode("ascii","ignore").decode().replace('\n', '').replace('\r', '')
+        license_text = get_license_text(component['license']).encode("ascii", "ignore").decode().replace('\n',
+                                                                                                         '').replace(
+            '\r', '')
         if component_result(component) == 'TO BE VERIFIED':
-            row = ['TO BE VERIFIED', component['pkg_name'], "=\"%s\"" % component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['TO BE VERIFIED', component['pkg_name'], "=\"%s\"" % component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             to_be_verified_values.append(row)
         elif component_result(component) == 'APPROVED':
-            row = ['APPROVED', component['pkg_name'], "=\"%s\"" % component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['APPROVED', component['pkg_name'], "=\"%s\"" % component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             approved_values.append(row)
         elif component_result(component) == 'REJECTED':
-            row = ['REJECTED', component['pkg_name'], "=\"%s\"" % component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['REJECTED', component['pkg_name'], "=\"%s\"" % component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             rejected_values.append(row)
         elif component_result(component) == 'WHITE LIST':
-            row = ['WHITE LIST', component['pkg_name'], "=\"%s\"" % component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['WHITE LIST', component['pkg_name'], "=\"%s\"" % component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             white_list_values.append(row)
         else:
-            row = [component_result(component), component['pkg_name'], "=\"%s\"" % component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = [component_result(component), component['pkg_name'], "=\"%s\"" % component['version'],
+                   component['license'], component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             else_values.append(row)
 
     values = to_be_verified_values + approved_values + rejected_values + white_list_values + else_values
     df = pd.DataFrame(values, columns=labels)
     df.head()
-    df.to_csv("./%s.csv"%(file_name), sep=',',index=False)
+    df.to_csv("./%s.csv" % (file_name), sep=',', index=False)
 
 
 def export_compliance_doc(component_elements, file_name):
     import datetime
-    labels = ['RESULT', 'PACKAGE', 'VERSION' , 'LICENSE' , 'COPYRIGHT',  'DOWNLOAD URL', 'LICENSE_TEXT']
+    labels = ['RESULT', 'PACKAGE', 'VERSION', 'LICENSE', 'COPYRIGHT', 'DOWNLOAD URL', 'LICENSE_TEXT']
     values = []
     to_be_verified_values = []
     approved_values = []
@@ -583,31 +612,36 @@ def export_compliance_doc(component_elements, file_name):
     compliance_doc = "OPENSOURCE COMPLIANCE DOCUMENT %s\n\n" % f"{datetime.datetime.now():%Y-%m-%d}"
     compliance_doc += "=====================================\n"
     for component in component_elements:
-        #print(component)
+        # print(component)
         if component['download_url'] != '' or component['pkg_tar_ball_name'] != '':
-            url = component['download_url']+'/'+component['pkg_tar_ball_name']
+            url = component['download_url'] + '/' + component['pkg_tar_ball_name']
         else:
             url = ''
-        license_text = get_license_text(component['license']).encode("ascii","ignore").decode()
+        license_text = get_license_text(component['license']).encode("ascii", "ignore").decode()
         if component_result(component) == 'TO BE VERIFIED':
-            row = ['TO BE VERIFIED', component['pkg_name'], component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['TO BE VERIFIED', component['pkg_name'], component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             to_be_verified_values.append(row)
         elif component_result(component) == 'APPROVED':
-            row = ['APPROVED', component['pkg_name'], component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['APPROVED', component['pkg_name'], component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             approved_values.append(row)
         elif component_result(component) == 'REJECTED':
-            row = ['REJECTED', component['pkg_name'], component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['REJECTED', component['pkg_name'], component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             rejected_values.append(row)
         elif component_result(component) == 'WHITE LIST':
-            row = ['WHITE LIST', component['pkg_name'], component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = ['WHITE LIST', component['pkg_name'], component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             white_list_values.append(row)
         else:
-            row = [component_result(component), component['pkg_name'], component['version'], component['license'], component['copyright'].encode("ascii","ignore").decode(), url, license_text]
+            row = [component_result(component), component['pkg_name'], component['version'], component['license'],
+                   component['copyright'].encode("ascii", "ignore").decode(), url, license_text]
             else_values.append(row)
-        
+
     values = to_be_verified_values + approved_values + rejected_values + white_list_values + else_values
     for item in values:
-        #compliance_doc += "PACKAGE RESULT : %s\n" % item[0]
+        # compliance_doc += "PACKAGE RESULT : %s\n" % item[0]
         compliance_doc += "PACKAGE NAME : %s\n" % item[1]
         compliance_doc += "PACKAGE VERSION : %s\n" % item[2]
         compliance_doc += "PACKAGE LICENSE : %s\n" % item[3]
@@ -616,17 +650,21 @@ def export_compliance_doc(component_elements, file_name):
         compliance_doc += "PACKAGE LICENSE TEXT :\n"
         compliance_doc += "%s \n" % item[6]
         compliance_doc += "=====================================\n"
-    with open("%s.txt"%(file_name), "w") as text_file:
+    with open("%s.txt" % (file_name), "w") as text_file:
         text_file.write(compliance_doc)
+
+
 def report_to_markdown(report, result):
     markdown = ""
     for item in report:
-        markdown += '|%20s|%20s|        |%s|\n' % (item['pkg_name']+ ' ' + item['version'], item['license'],result)
-        #copyright = ""
-        #for item2 in item['copyright']:
+        markdown += '|%20s|%20s|        |%s|\n' % (item['pkg_name'] + ' ' + item['version'], item['license'], result)
+        # copyright = ""
+        # for item2 in item['copyright']:
         #    markdown += '| | |%s|\n' % (item2)
     print(markdown)
     return markdown
+
+
 # python3 -m cyclonedxbuildroot.cli.generateBom -i manifest.xlsx
 def export_markdown_pdf_report(component_elements, file_name):
     report = generate_report_object(component_elements)
@@ -645,16 +683,19 @@ def export_markdown_pdf_report(component_elements, file_name):
     markdown += report_to_markdown(report['whitelist_report'], 'WHITE LIST')
     markdown += report_to_markdown(report['download_fail_report'], 'DOWN LOAD FAIL')
     markdown += report_to_markdown(report['private_report'], 'PRIVATE')
-    with open("%s.md"%(file_name), "w") as text_file:
+    with open("%s.md" % (file_name), "w") as text_file:
         text_file.write(markdown)
-    pypandoc.convert_text(markdown, 'pdf', format='md', outputfile='%s.pdf'%(file_name),extra_args=['--pdf-engine=xelatex','-V', 'geometry:margin=0.2in', ])
+    pypandoc.convert_text(markdown, 'pdf', format='md', outputfile='%s.pdf' % (file_name),
+                          extra_args=['--pdf-engine=xelatex', '-V', 'geometry:margin=0.2in', ])
+
 
 def export_cyclonedx_sbom(component_elements, file_name):
-# Generate the CycloneDX BOM and return it as an XML string
-# this func will not check osrb verify result!
+    # Generate the CycloneDX BOM and return it as an XML string
+    # this func will not check osrb verify result!
     bom_xml = BomGenerator.build_bom([build_cyclonedx_component(item) for item in component_elements])
-    with open("%s.xml"%(file_name), 'wb') as text_file:
+    with open("%s.xml" % (file_name), 'wb') as text_file:
         text_file.write(bom_xml.encode('utf-8'))
+
 
 def main():
     parser = argparse.ArgumentParser(description='CycloneDX BOM Generator')
@@ -671,18 +712,27 @@ def main():
 
     component_elements = buildroot_csv_manifest_to_component(args.input_file)
 
-    #print(json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
+    # print(json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
     #                       "metadata": {"time": "00:00:00 01 Jan 2023",
     #                                    "component": {"type": "firmware", "name": "Space WiFi Module",
     #                                                  "version": "1.2.3"}}}, indent=3))
 
     thejson = {"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
-                           "metadata": {"time": "00:00:00 01 Jan 2023",
-                                        "component": {"type": "firmware", "name": "Space WiFi Module",
-                                                      "version": "1.2.3"}}}
+               "metadata": {"time": "00:00:00 01 Jan 2023",
+                            "component": {"type": "firmware", "name": "Space WiFi Module",
+                                          "version": "1.2.3"}}}
 
-    thejson["components"] = [ {"name": "busybox", "version": "1.2.3"}, {"name": "Linux", "version": "4.1.19"} ]
+
+    final_component_details=list()
+
+    set_of_component_details = {"type": "library", "name": "busybox", "version": "1.2.3", "licenses": {"expression": "insert license names"}, \
+                                "purl": "pkg:generic/openssl@1.1.10g?download_url=<insert URL here>"}, {"type": "library","name": "Linux", "version": "4.1.19"}
+    second_set_of_component_details = {"type": "library", "name": "openssl", "version": "2.2.2"}, {"type": "library", "name": "wpa_supplicant", "version": "5.1.1"}
+
+    final_component_details = set_of_component_details + second_set_of_component_details
+    thejson["components"] = [final_component_details]
 
     print(json.dumps(thejson, indent=3))
+
 
 main()
