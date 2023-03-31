@@ -20,6 +20,8 @@
 # the main reason of change here is to generate a import-able bom.xml for dependency-track
 
 import argparse
+from typing import List, Any
+
 import pandas as pd
 import re
 import xmlschema
@@ -497,22 +499,22 @@ def print_report(component_elements):
     report = generate_report_object(component_elements)
     for item in report['ok_report']:
         print('\x1b[6;30;45m[OK]\x1b[0m package: [%s %s] license [%s]' % (
-        item['pkg_name'], item['version'], item['license']))
+            item['pkg_name'], item['version'], item['license']))
     for item in report['error_report']:
         print('\x1b[6;30;41m[ERROR]\x1b[0m package: [%s %s] license [%s]' % (
-        item['pkg_name'], item['version'], item['license']))
+            item['pkg_name'], item['version'], item['license']))
     for item in report['warning_report']:
         print('\x1b[6;30;43m[WARNING]\x1b[0m package: [%s %s] license [%s]' % (
-        item['pkg_name'], item['version'], item['license']))
+            item['pkg_name'], item['version'], item['license']))
     for item in report['whitelist_report']:
         print('\x1b[6;30;47m[WHITELIST]\x1b[0m package: [%s %s] license [%s]' % (
-        item['pkg_name'], item['version'], item['license']))
+            item['pkg_name'], item['version'], item['license']))
     for item in report['private_report']:
         print('\x1b[6;30;45m[PRIVATE]\x1b[0m package: [%s %s] license [%s]' % (
-        item['pkg_name'], item['version'], item['license']))
+            item['pkg_name'], item['version'], item['license']))
     for item in report['download_fail_report']:
         print('\x1b[6;37;44m[DOWNLOAD FAIL]\x1b[0m package: [%s %s] Url [%s/%s]' % (
-        item['pkg_name'], item['version'], item['download_url'], item['pkg_tar_ball_name']))
+            item['pkg_name'], item['version'], item['download_url'], item['pkg_tar_ball_name']))
 
 
 def component_result(component):
@@ -712,26 +714,24 @@ def main():
 
     component_elements = buildroot_csv_manifest_to_component(args.input_file)
 
-    # print(json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
-    #                       "metadata": {"time": "00:00:00 01 Jan 2023",
-    #                                    "component": {"type": "firmware", "name": "Space WiFi Module",
-    #                                                  "version": "1.2.3"}}}, indent=3))
-
     thejson = {"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
                "metadata": {"time": "00:00:00 01 Jan 2023",
                             "component": {"type": "firmware", "name": "Space WiFi Module",
                                           "version": "1.2.3"}}}
 
+    def Merge(dict1, dict2):
+        dict3= dict2.update(dict1)
+        return(dict3)
 
-    final_component_details=list()
 
-    set_of_component_details = {"type": "library", "name": "busybox", "version": "1.2.3", "licenses": {"expression": "insert license names"}, \
-                                "purl": "pkg:generic/openssl@1.1.10g?download_url=<insert URL here>"}, {"type": "library","name": "Linux", "version": "4.1.19"}
-    second_set_of_component_details = {"type": "library", "name": "openssl", "version": "2.2.2"}, {"type": "library", "name": "wpa_supplicant", "version": "5.1.1"}
+    final_component_details = list("")
+    with open(args.input_file, newline='') as csvfile:
+        sheetX = csv.DictReader(csvfile)
+        for row in sheetX:
+            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": "something", "purl": "pkg:generic/openssl@1.1.10g?download_url=<insert URL here>"}
+            final_component_details.append(set_of_component_details)
 
-    final_component_details = set_of_component_details + second_set_of_component_details
     thejson["components"] = [final_component_details]
-
     print(json.dumps(thejson, indent=3))
 
 
