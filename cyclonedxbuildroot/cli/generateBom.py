@@ -680,6 +680,9 @@ def main():
                            "metadata": {"time": "00:00:00 01 Jan 2023",
                                         "component": {"type": "firmware", "name": "Space WiFi Module",
                                                       "version": "1.2.3"}}}
+
+    thejson["components"] = [ {"name": "busybox", "version": "1.2.3"}, {"name": "Linux", "version": "4.1.19"} ]
+
     print(json.dumps(thejson, indent=3))
 
 main()
