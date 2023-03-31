@@ -6,4 +6,5 @@ requirements_parser==0.2.0
 packaging==19.2
 chardet==3.0.4
 pandas
-re
+pypandoc
+xmltodict

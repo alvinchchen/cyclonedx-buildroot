@@ -26,7 +26,7 @@ import xmlschema
 from cyclonedxbuildroot import BomGenerator
 from cyclonedxbuildroot import BomValidator
 #get copyright
-import debmake
+# RLS import debmake
 import shutil
 import requests
 import urllib3
@@ -35,6 +35,9 @@ http = urllib3.PoolManager()
 import urllib, json
 import pypandoc
 import xmltodict
+import csv
+import json
+
 
 def get_json_from_url(url):
     response = urllib.request.urlopen(url)
@@ -111,7 +114,7 @@ verified_package_list = get_json_from_url("https://raw.githubusercontent.com/alv
 
 whitelist_license = get_json_from_url("https://github.com/alvinchchen/verified_package_list/raw/master/whitelist.json")
 
-openwrt_package_info = read_openwrt_package_file("packageinfo")
+# RLS openwrt_package_info = read_openwrt_package_file("packageinfo")
 
 def check_verified_package_list(name, version):
     for pkg in verified_package_list:
@@ -210,7 +213,19 @@ def get_url_license(license_url):
     shutil.rmtree(tmp_dir)
     return result
 
-
+# currenty the manifest.csv file header shows
+# PACKAGE,VERSION,LICENSE,LICENSE FILES,SOURCE ARCHIVE,SOURCE SITE,DEPENDENCIES WITH LICENSES
+#
+# example
+#
+# PACKAGE boost (1 to 1)
+# VERSION 1.69.0 (1 to 1)
+# LICENSE BSL-1.0 (many)
+# LICENSE FILES LICENSE_1_0.txt (many)
+# SOURCE ARCHIVE boost_1_69_0.tar.bz2 (1 to 1)
+# SOURCE SITE http://downloads.sourceforge.net/project/boost/boost/1.69.0 (1 to 1)
+# DEPENDENCIES WITH LICENSES skeleton-init-common [unknown] skeleton-init-systemd [unknown] toolchain-external-laird-arm [unknown] (many)
+#
 def build_cyclonedx_component(component):
     publisher = component['publisher']
     pkg_name = component['pkg_name']
@@ -252,6 +267,15 @@ def openwrt_manifest_to_component(input_file):
         component['download_fail'] = False
         component_elements.append(component)
     return component_elements
+
+
+def buildroot_csv_manifest_to_component(input_file):
+    """Read BOM data from a csv file typically manifest.csv."""
+    with open(input_file, newline='') as csvfile:
+        sheetX = csv.DictReader(csvfile)
+        for row in sheetX:
+            print("Package Name: ", row['PACKAGE'], "Version :", row['VERSION'])
+    return
 
 
 def buildroot_manifest_to_component(input_file):
@@ -644,26 +668,18 @@ def main():
     print('Output BOM: ' + args.output_file)
     print('Input Type: ' + args.input_type)
     print('Output Type: ' + args.output_type)
-    
-    if args.input_type == 'buildroot':
-        component_elements = buildroot_manifest_to_component(args.input_file)
-    if args.input_type == 'openwrt':
-        component_elements = openwrt_manifest_to_component(args.input_file)
-    if args.input_type == 'csv':
-        component_elements = report_csv_to_component(args.input_file)
-    if args.input_type == 'cyclonedx':
-        component_elements = cyclonedx_to_component(args.input_file)
 
-    if args.output_type == 'markdown':
-        export_markdown_pdf_report(component_elements, args.output_file)
-    if args.output_type == 'csv':
-        export_csv_report(component_elements, args.output_file)
-    if args.output_type == 'cyclonedx':
-        export_cyclonedx_sbom(component_elements, args.output_file)
-    if args.output_type == 'console':
-        print_report(component_elements)
-    if args.output_type == 'report':
-        export_compliance_doc(component_elements, args.output_file)
-        
+    component_elements = buildroot_csv_manifest_to_component(args.input_file)
+
+    #print(json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
+    #                       "metadata": {"time": "00:00:00 01 Jan 2023",
+    #                                    "component": {"type": "firmware", "name": "Space WiFi Module",
+    #                                                  "version": "1.2.3"}}}, indent=3))
+
+    thejson = {"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
+                           "metadata": {"time": "00:00:00 01 Jan 2023",
+                                        "component": {"type": "firmware", "name": "Space WiFi Module",
+                                                      "version": "1.2.3"}}}
+    print(json.dumps(thejson, indent=3))
 
 main()
