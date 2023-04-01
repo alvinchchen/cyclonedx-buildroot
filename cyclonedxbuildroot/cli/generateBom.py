@@ -728,7 +728,9 @@ def main():
     with open(args.input_file, newline='') as csvfile:
         sheetX = csv.DictReader(csvfile)
         for row in sheetX:
-            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": "something", "purl": "pkg:generic/openssl@1.1.10g?download_url=<insert URL here>"}
+            purl: str | Any = "pkg:generic/openssl@1.1.10g?download_url=" + row['SOURCE SITE']
+
+            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": "something", "purl": purl}
             final_component_details.append(set_of_component_details)
 
     thejson["components"] = [final_component_details]
