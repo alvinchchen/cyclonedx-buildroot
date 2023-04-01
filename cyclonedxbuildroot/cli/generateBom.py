@@ -728,9 +728,11 @@ def main():
     with open(args.input_file, newline='') as csvfile:
         sheetX = csv.DictReader(csvfile)
         for row in sheetX:
-            purl: str | Any = "pkg:generic/" + row['PACKAGE'] + "-" + row['VERSION'] + "?download_url=" + row['SOURCE SITE'] + row['SOURCE ARCHIVE']
-
-            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": row['LICENSE'], "purl": purl}
+            purl_info: str | Any = "pkg:generic/" + row['PACKAGE'] + "-" + row['VERSION'] + "?download_url=" + row['SOURCE SITE'] + row['SOURCE ARCHIVE']
+            license_list_info = list("")
+            set_of_license_info = {"license": {"name": row['LICENSE']}}
+            license_list_info.append(set_of_license_info)
+            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": license_list_info, "purl": purl_info}
             final_component_details.append(set_of_component_details)
 
     thejson["components"] = [final_component_details]
