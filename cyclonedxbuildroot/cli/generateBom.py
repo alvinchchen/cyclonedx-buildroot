@@ -20,7 +20,8 @@
 # the main reason of change here is to generate a import-able bom.xml for dependency-track
 
 import argparse
-from typing import List, Any
+from datetime import datetime
+from typing import List, Any, Type
 
 import pandas as pd
 import re
@@ -283,8 +284,8 @@ def buildroot_csv_manifest_to_component(input_file):
     """Read BOM data from a csv file typically manifest.csv."""
     with open(input_file, newline='') as csvfile:
         sheetX = csv.DictReader(csvfile)
-        for row in sheetX:
-            print("Package Name: ", row['PACKAGE'], "Version :", row['VERSION'])
+        #for row in sheetX:
+        #    print("Package Name: ", row['PACKAGE'], "Version :", row['VERSION'])
     return
 
 
@@ -705,19 +706,26 @@ def main():
     parser.add_argument('-o', action='store', dest='output_file', default='export')
     parser.add_argument('-it', action='store', dest='input_type', default='csv')
     parser.add_argument('-ot', action='store', dest='output_type', default='csv')
+    parser.add_argument('-n', action='store', dest='input_name', default='unknown')
+    parser.add_argument('-v', action='store', dest='component_version', default='unknown')
+
 
     args = parser.parse_args()
     print('Input file: ' + args.input_file)
     print('Output BOM: ' + args.output_file)
     print('Input Type: ' + args.input_type)
     print('Output Type: ' + args.output_type)
+    print('SBOM Component Name: ' + args.input_name)
+    print('SBOM Component Version: ' + args.component_version)
 
     component_elements = buildroot_csv_manifest_to_component(args.input_file)
 
+    sbom_time: Type[datetime] = datetime.now()
     thejson = {"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
-               "metadata": {"time": "00:00:00 01 Jan 2023",
-                            "component": {"type": "firmware", "name": "Space WiFi Module",
-                                          "version": "1.2.3"}}}
+               "metadata": {"time": str(sbom_time),
+                            "component": {"type": "firmware",
+                                          "name": args.input_name,
+                                          "version": args.component_version}}}
 
     def Merge(dict1, dict2):
         dict3= dict2.update(dict1)
