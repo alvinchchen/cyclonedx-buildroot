@@ -730,7 +730,7 @@ def main():
         for row in sheetX:
             purl_info: str | Any = "pkg:generic/" + row['PACKAGE'] + "-" + row['VERSION'] + "?download_url=" + row['SOURCE SITE'] + row['SOURCE ARCHIVE']
             license_list_info = list("")
-            set_of_license_info = {"license": {"name": row['LICENSE']}}
+            set_of_license_info = {"expression":  row['LICENSE']}
             license_list_info.append(set_of_license_info)
             set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": license_list_info, "purl": purl_info}
             final_component_details.append(set_of_component_details)
