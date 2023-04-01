@@ -730,7 +730,7 @@ def main():
         for row in sheetX:
             purl: str | Any = "pkg:generic/openssl@1.1.10g?download_url=" + row['SOURCE SITE']
 
-            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": "something", "purl": purl}
+            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": row['LICENSE'], "purl": purl}
             final_component_details.append(set_of_component_details)
 
     thejson["components"] = [final_component_details]
