@@ -728,7 +728,7 @@ def main():
     with open(args.input_file, newline='') as csvfile:
         sheetX = csv.DictReader(csvfile)
         for row in sheetX:
-            purl: str | Any = "pkg:generic/openssl@1.1.10g?download_url=" + row['SOURCE SITE']
+            purl: str | Any = "pkg:generic/" + row['SOURCE ARCHIVE'] + "?download_url=" + row['SOURCE SITE']
 
             set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": row['LICENSE'], "purl": purl}
             final_component_details.append(set_of_component_details)
