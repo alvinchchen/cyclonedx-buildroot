@@ -750,7 +750,8 @@ def create_json_from_sbom(args):
                 print("Cannot continue with the provided input file. Exiting.")
                 exit(-1)
     thejson["components"] = [final_component_details]
-    print(json.dumps(thejson, indent=3))
+    outputfile = open(args.output_file, mode='w')
+    json.dump(thejson, outputfile,indent=3)
 
 def main():
     parser = argparse.ArgumentParser(description='CycloneDX BOM Generator')
