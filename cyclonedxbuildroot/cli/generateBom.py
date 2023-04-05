@@ -723,6 +723,7 @@ def export_cyclonedx_sbom(component_elements, file_name):
 
 def create_json_from_sbom(args):
     sbom_time: Type[datetime] = datetime.now()
+    # Insert the CycloneDX header info for the user supplied component
     thejson = {"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
                "metadata": {"time": str(sbom_time),
                             "component": {"type": "firmware",
@@ -730,16 +731,24 @@ def create_json_from_sbom(args):
                                           "version": args.component_version}}}
 
     final_component_details = list("")
+    # Buildroot CSV file supplies software package data in each row. Any change to that map of data will break
+    # the resulting JSON.
     with open(args.input_file, newline='') as csvfile:
         sheetX = csv.DictReader(csvfile)
         for row in sheetX:
-            purl_info: str | Any = "pkg:generic/" + row['PACKAGE'] + "-" + row['VERSION'] + "?download_url=" + row['SOURCE SITE'] + row['SOURCE ARCHIVE']
-            license_list_info = list("")
-            set_of_license_info = {"expression":  row['LICENSE']}
-            license_list_info.append(set_of_license_info)
-            set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": license_list_info, "purl": purl_info}
-            final_component_details.append(set_of_component_details)
-
+            try:
+                purl_info: str | Any = "pkg:generic/" + row['PACKAGE'] + "-" + row['VERSION'] + "?download_url=" + row['SOURCE SITE'] + row['SOURCE ARCHIVE']
+                license_list_info = list("")
+                set_of_license_info = {"expression":  row['LICENSE']}
+                license_list_info.append(set_of_license_info)
+                set_of_component_details = {"type": "library","name": row['PACKAGE'],"version": row['VERSION'],"licenses": license_list_info, "purl": purl_info}
+                final_component_details.append(set_of_component_details)
+            except KeyError:
+                print("The input file header does not contain the expected data in the first row of the file.")
+                print("Expected PACKAGE,VERSION,LICENSE,LICENSE FILES,SOURCE ARCHIVE,SOURCE SITE,DEPENDENCIES WITH LICENSES")
+                print("Found the following in the csv file first row:", row)
+                print("Cannot continue with the provided input file. Exiting.")
+                exit(-1)
     thejson["components"] = [final_component_details]
     print(json.dumps(thejson, indent=3))
 
