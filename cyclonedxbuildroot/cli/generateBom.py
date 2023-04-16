@@ -27,7 +27,8 @@ from cyclonedxbuildroot import BomGenerator
 from cyclonedxbuildroot import BomValidator
 import csv
 import json
-
+import xml
+import xml.etree.ElementTree as ET
 
 # Buildroot manifest.csv file header shows the following header row
 # PACKAGE,VERSION,LICENSE,LICENSE FILES,SOURCE ARCHIVE,SOURCE SITE,DEPENDENCIES WITH LICENSES
@@ -42,18 +43,69 @@ import json
 # SOURCE SITE http://downloads.sourceforge.net/project/boost/boost/1.69.0 (1 to 1)
 # DEPENDENCIES WITH LICENSES skeleton-init-common [unknown] skeleton-init-systemd [unknown] toolchain-external-laird-arm [unknown] (many)
 
+
+def create_xml_from_sbom(args):
+    #
+    # Insert the CycloneDX BOM_Metadata
+    #
+    # TODO use a proper UUID for XML and for JSON, this serialNUmber value is an example.
+    # TODO get the header in place
+    theHeader="<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    xmlbom = ET.Element('bom')
+    xmlbom.set("xmlns","http://cyclonedx.org/schema/bom/1.4")
+    xmlbom.set("serialNumber", "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79")
+    xmlbom.set("version","1")
+    a = ET.SubElement(xmlbom,'components')
+    b = ET.SubElement(a, 'component')
+    c = ET.SubElement(b,"name")
+    d = ET.SubElement(b, "version")
+
+    b.set("type", "library")
+    c.text= "openssl"
+    d.text = "1.1.1t"
+
+    ET.indent(xmlbom)
+    ET.dump(xmlbom)
+
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <bom xmlns="http://cyclonedx.org/schema/bom/1.4"
+     serialNumber="urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79"
+     version="1">
+    <components>
+        <component type="library">
+            <name>acme-library</name>
+            <version>1.0.0</version>
+            <!-- The minimum required fields are:
+            component type and name. -->
+        </component>
+        <!-- More components here -->
+    </components>
+    </bom>
+    """
 def create_json_from_sbom(args):
-    sbom_time = datetime.utcnow()
-    # Insert the CycloneDX header info for the user supplied component
+    #
+    # Insert the CycloneDX BOM_Metadata
     thejson = {"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
-               "metadata": {"time": (str(sbom_time)+" UTC"),
+               "metadata": {"time": (str( datetime.utcnow())+" UTC"),
                             "component": {"type": "firmware",
                                           "name": args.input_name,
                                           "version": args.component_version}}}
+    # TODO add serialNumber
+    # "serialNumber": {
+    #    "type": "string",
+    #    "title": "BOM Serial Number",
+    #    "description": "Every BOM generated SHOULD have a unique serial number, even if the contents of the BOM have not changed over time. If specified, the serial number MUST conform to RFC-4122. Use of serial numbers are RECOMMENDED.",
+    #    "examples": ["urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79"],
+    #    "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    # },
 
+    #
+    # Capture the omponents that describe the complete inventory of first-party software
+    #
     final_component_details = list("")
     # Buildroot CSV file supplies software package data in each row. Any change to that map of data will break
-    # the resulting JSON.
+    # the resulting JSON. Thus a try/except block to help with run time issues.
     with open(args.input_file, newline='') as csvfile:
         sheetX = csv.DictReader(csvfile)
         for row in sheetX:
@@ -96,7 +148,8 @@ def main():
     print('SBOM Component Version: ' + args.component_version)
 
     # buildroot_csv_manifest_to_component(args.input_file)
-    create_json_from_sbom(args)
+    create_xml_from_sbom(args)
+    # RLS TESTING XML create_json_from_sbom(args)
 
 
 main()
