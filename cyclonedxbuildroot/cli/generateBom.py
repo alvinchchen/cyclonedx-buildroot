@@ -20,7 +20,7 @@
 # the main reason of change here is to generate an import-able bom.xml for dependency-track
 
 import argparse
-from datetime import datetime
+from datetime import datetime, tzinfo
 from typing import Any, Type
 
 from cyclonedxbuildroot import BomGenerator
@@ -43,10 +43,10 @@ import json
 # DEPENDENCIES WITH LICENSES skeleton-init-common [unknown] skeleton-init-systemd [unknown] toolchain-external-laird-arm [unknown] (many)
 
 def create_json_from_sbom(args):
-    sbom_time = datetime.now()
+    sbom_time = datetime.utcnow()
     # Insert the CycloneDX header info for the user supplied component
     thejson = {"bomFormat": "CycloneDX", "specVersion": "1.4", "version": "1",
-               "metadata": {"time": str(sbom_time),
+               "metadata": {"time": (str(sbom_time)+" UTC"),
                             "component": {"type": "firmware",
                                           "name": args.input_name,
                                           "version": args.component_version}}}
